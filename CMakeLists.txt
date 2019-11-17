@@ -8,7 +8,9 @@ include(cmake/gtest/CMakeLists.txt)
 
 add_executable(
         cpp_basic
-        new.cpp)
+        new.cpp
+        auto.cpp
+)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

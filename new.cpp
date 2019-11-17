@@ -40,12 +40,12 @@ TEST(New, PlacementNewDelete) {
 }
 
 TEST(New, DeleteArray) {
-    A* array = new A[2]();
+    A* array = new A[2];
     delete[] array;
 
     array = new A[2];
     // UB!!!
-    delete array;
+    // delete array;
 }
 
 /*
@@ -61,9 +61,38 @@ void operator delete(void* ptr) noexcept {
  */
 
 TEST(New, OverrideNew) {
-    cout << endl << __PRETTY_FUNCTION__ << endl;
-
     std::string str0 = "short string";
     std::string str1 = "this is a very long string";
+}
+
+TEST(New, ClassSpecifiedNew) {
+    class C {
+    public:
+        void* operator new(size_t s) {
+            cout << "new C" << endl;
+            return std::malloc(s);
+        }
+
+        void operator delete(void* ptr) {
+            cout << "delete C" << endl;
+            std::free(ptr);
+        }
+    };
+
+    C* c = new C();
+    delete c;
+}
+
+TEST(New, ClassSpecificNewDelete) {
+    class C {
+    public:
+        void* operator new(size_t s) = delete;
+
+        void operator delete(void* ptr) = delete;
+    };
+
+    // can't compile
+    // C* c = new C();
+    // delete c;
 }
 

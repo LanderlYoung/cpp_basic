@@ -258,12 +258,14 @@ auto的出现使得代码更简洁易懂，使用起来如下代码所示：
 TEST(Auto, Vector) {
     std::vector<int> pi{3, 1, 4, 1, 5, 9, 2, 6};
 
-    std::vector<int>::const_iterator it0 = std::find(pi.begin(), pi.end(), 7);
+    std::vector<int>::iterator it0 = std::find(pi.begin(), pi.end(), 7);
     auto it1 = std::find(pi.begin(), pi.end(), 7);
+    static_assert(std::is_same_v<decltype(it0), decltype(it1)>);
 
     std::map<int, std::pair<std::string, std::chrono::milliseconds>> someMap;
-    std::map<int, std::pair<std::string, std::chrono::milliseconds>>::const_iterator it2 = someMap.find(0);
+    std::map<int, std::pair<std::string, std::chrono::milliseconds>>::iterator it2 = someMap.find(0);
     auto it3 = someMap.find(0);
+    static_assert(std::is_same_v<decltype(it2), decltype(it3)>);
 }
 ```
 

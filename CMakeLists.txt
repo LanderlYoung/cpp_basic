@@ -10,7 +10,7 @@ add_executable(
         cpp_basic
         new.cpp
         auto.cpp
-)
+        member.cpp)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

@@ -4,7 +4,7 @@
 
 # 1 new
 
-## 1 Placement new: 在给定地址上new
+## 1.1 Placement new: 在给定地址上new
 
 众所周知C++的new操作符实际上会做两件事：
 1. 分配内存
@@ -28,7 +28,7 @@ void placement_new_delete() {
 
 类似new，调用者需要自行delete。这里我们使用的是placement delete，即直接调用A的析构函数，你可能是第一次见这么使用，但是析构函数也确实是一个成员函数（你甚至可以讲他生命为private），因此直接调用并没有什么特别。只是需要保证不能多次调用。
 
-## 2 delete[] VS delete
+## 1.2 delete[] VS delete
 
 我们知道可以使用 `new A[]` 的形式创建类 A 的数组，同时需要注意一定要对应的使用 `delete[] array`的形式来销毁之。 原因有几点：
 1. new 和 new[] 是两个操作符，他们分配的内存可能不能使用同一的释放逻辑。
@@ -36,7 +36,7 @@ void placement_new_delete() {
 
 因此使用 `new[]` 创建的数组一定要使用 `delete[]` 释放之。
 
-## 3 override global operator new
+## 1.3 override global operator new
 
 我们知道new new[] delete delete[]都是操作符，cpp标准库提供默认实现（通常是调用malloc和free），但是我们也可以自己提供自己的实现，比如使用jemalloc，dlmalloc达到更高的性能，甚至是提供GC能力。
 
@@ -70,16 +70,15 @@ free
 
 这里实际上是和STL实现相关的，测试用的clang的libc++做了small objects optimization，避免小字符串的动态内存分配。该技术在C++中广泛应用（例如std::function内部也有使用）。
 
-另外还可以重载 new[] 和 delete[]
+另外还可以重载 new[] 和 delete[]，此外类的operator new系列函数是默认static的（不然咧？？？）。
 
 详见: https://en.cppreference.com/w/cpp/memory/new/operator_new
 
 > 思考一下会发现C++的new关键字如上所述有两个动作，但是new操作符确只负责了内存分配。delete同理。
 
-## 4 Class specific new
+## 1.4 Class specific new
 
 除了上述全局的new操作符，每个类甚至客户可以定义自己的new操作符。
-
 
 ```cpp
 TEST(New, ClassSpecifiedNew) {
@@ -128,16 +127,16 @@ TEST(New, ClassSpecificNewDelete) {
 
 ```
 [ 83%] Building CXX object CMakeFiles/cpp_basic.dir/new.cpp.o
-/Users/young/Desktop/cpp_basic/new.cpp:95:12: error: call to deleted function 'operator new'
+cpp_basic/new.cpp:95:12: error: call to deleted function 'operator new'
     C* c = new C();
            ^
-/Users/young/Desktop/cpp_basic/new.cpp:89:15: note: candidate function has been explicitly deleted
+cpp_basic/new.cpp:89:15: note: candidate function has been explicitly deleted
         void* operator new(size_t s) = delete;
               ^
-/Users/young/Desktop/cpp_basic/new.cpp:96:5: error: attempt to use a deleted function
+cpp_basic/new.cpp:96:5: error: attempt to use a deleted function
     delete c;
     ^
-/Users/young/Desktop/cpp_basic/new.cpp:91:14: note: 'operator delete' has been explicitly marked deleted here
+cpp_basic/new.cpp:91:14: note: 'operator delete' has been explicitly marked deleted here
         void operator delete(void* ptr) = delete;
 ```
 
@@ -151,6 +150,136 @@ TEST(New, ClassSpecificNewDelete) {
     static void operator delete[](void*) = delet
 ```
 
+# 2 类
+
+## 2.1 class vs struct
+C++中struct与class完全等价，只有一处不同：
+> struct的成员默认public，class默认private。
+
+除此之外完全相同！
+
+而且在使用struct类型时不需要struct xxx的形式，因此不建议类似C的 typedef 出现。
+
+```cpp
+
+// C style
+typedef struct {
+
+} CS;
+
+CS cs;
+
+// C++ style
+
+struct {
+
+} CPP_S;
+
+CPP_S cppS;
+```
+
+## 2.2 成员变量
+
+
+### 2.2.1 forward-declare
+成员变量的类型可以是基本类型，指针，引用，或是其他类。当需要使用类类型是我们通常要include对应头文件，但是有时候为了避免头文件相互引用，需要使用forwar-decalred的形式。
+
+```cpp
+
+// forward declared A
+class A;
+
+class B {
+    A* a;
+    A getA();
+    void passA(A a);
+};
+```
+
+上述A是forward-declare的，不需要对应头文件，B就可以使用。但是此时的A是**incomplete-type**，即只有个名字，其他信息一概不知。因此在B的声明中只能声明A的指针或者引用，而不能声明成员为A的值类型（因为此时A的size和内存布局信息一概不知，而指针的内存布局都是统一的）。
+
+另外，可以在成员函数的参数和返回值中使用A的值类型，因为函数的具体实现和定义是分开的，定义函数时不需要A的具体信息。
+
+### 2.2.2 成员初始化——默认构造函数
+
+这部分大家都很清楚了，初始化列表！但是其中还是有不少坑，我们来试试看！
+
+quiz：试着说出下面定义的`struct X`在默认构造之后的各成员的值。
+
+```cpp
+struct X0 {
+    int a;
+    bool b;
+    void* c;
+};
+
+struct X1 {
+    int a;
+    bool b = true;
+    void* c;
+};
+
+struct X2 {
+    int a;
+    bool b = true;
+    void* c;
+
+    X() : a(1), b(false) {}
+};
+```
+
+> 结果详见test-case
+
+X0 和 X1都有一个编译器生成的默认构造函数，X2有一个自定义的默认构造函数。因此像`X x;`这样的代码可以编译通过。
+
+X0是一个[standard-layout](https://en.cppreference.com/w/cpp/types/is_standard_layout)类
+
+[**隐式声明的默认构造函数**][default_constructor]: 及编译器生成的默认构造函数，当满足特定条件时才会生成。
+
+[**trivaial default constructor:**][default_constructor]也就是什么都不咋说的构造函数，同样也不会初始化成员变量。
+
+如cppreference所示，上述逻辑比较复杂，即使花时间研究清楚过段时间也很容易忘记，因此建议:
+
+**默认构造函数**
+> 全部显式的声明默认构造函数。
+
+**成员变量初始化**
+> 要么全部不初始化（交给编译器初始化默认值），要么全部初始化。永远不要初始化部分值。
+
+```cpp
+
+struct X {
+    // 显式声明
+    X(): ...
+}
+
+struct X {
+    // 显示声明，并使用编译器生成的默认构造函数
+    X() = default;
+}
+```
+
+吐槽：C++就是这样，标准看似很严谨，但是有些完全不是人类的思维能力可以熟练使用的，C++更像是给机器写的（说不定N年后AI就会写C++代码了)。。。
+
+[default_constructor]: https://en.cppreference.com/w/cpp/language/default_constructor
+
+### 2.2.2 成员初始化——构造析构顺序
+
+默认值
+
+## 2.3 成员函数
+
+## 2.4 继承
+
+## 2.5 继承后的内存布局与static_cast
+
+## 2.6 虚函数
+
+## 2.7 虚析构函数
+
+## 2.8 纯虚函数
+
+## 2.9 菱形继承与虚继承
 
 # 3 值，指针，引用
 

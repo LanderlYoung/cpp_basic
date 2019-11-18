@@ -68,7 +68,8 @@ TEST(New, OverrideNew) {
 TEST(New, ClassSpecifiedNew) {
     class C {
     public:
-        void* operator new(size_t s) {
+        // 加不加static效果一样，默认就是static
+        static void* operator new(size_t s) {
             cout << "new C" << endl;
             return std::malloc(s);
         }

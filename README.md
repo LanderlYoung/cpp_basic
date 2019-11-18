@@ -285,17 +285,124 @@ struct X {
 
 建议：初始化列表中的顺序和声明顺序保持一致。
 
-## 2.3 成员函数
+## 2.3 编译器默认生成的函数
+
+Effective C++: Item5
+Effective Modern C++: Item
+
+当你在代码中声明一个这样的类的时候，
+```cpp
+struct X {
+
+};
+```
+实际发生的情况可能远超出你的想象，他实际上等价于：
+
+```cpp
+struct X {
+    X() = default; // 1
+    ~X() = default; // 2
+
+    X(const X& copy) = default; // 3
+    X& operator=(const X& copy) = default; // 4
+
+    X(X&& move) = default; // 5
+    X& operator=(X&& move) = default; //6
+};
+```
+
+不要被吓到，我们一个一个说。
+
+| 函数 | 默认实现 |
+| :--- | :--- |
+| 1. 默认构造函数 | 逐个调用成员变量默认构造函数（详见上文）|
+| 2. 析构函数 | 逆序逐个调用成员变量析构函数 |
+| 3. 拷贝构造函数 | 逐个调用成员拷贝构造函数 |
+| 4. 赋值操作符 | 逐个调用成员赋值操作 |
+| 5. 移动构造函数 | 逐个调用成员移动构造函数 |
+| 6. 移动赋值构造函数 | 逐个调用成员移动赋值操作|
+
+quiz: 下列代码分别调用了什么函数？
+
+```cpp
+X x1;
+X x2(x1);
+X x3 = x2;
+X x4((X()));
+X x5 = X();
+X x6(std::move(x2));
+X x7 = std::move(x3);
+x1 = x7; // 8
+x2 = std::move(x7); // 9
+```
+
+- x1: 默认构造
+- x2: 默认拷贝
+- x3: 同上
+- x4: 默认构造，因为[NVRO]，实际上只构造一个
+- x5: 同上
+- x6: 移动构造
+- x7: 同上
+-  8: 赋值
+-  9: 移动赋值
+
+[NVRO]: https://en.cppreference.com/w/cpp/language/copy_elision
+
+**[move]语义概述：**
+右值表示当一个临时的变量，通常不再使用时。move语义是基于右值引用的。
+
+`X x = createX()` createX 返回的就是右值，因此调用到移动构造函数。
+
+```cpp
+X(X&& move) noexcept {
+    // move不再使用，因此”偷走“他的资源，避免内存分配+拷贝
+    this->bigMemory = move.bigMemory;
+    move.bigMemory = nullptr;
+}
+```
+
+哪些是右值：
+1. 函数返回值
+2. 使用 `std::move` 强制转成右值
+
+[move]:https://en.cppreference.com/w/cpp/language/move_constructor
 
 ## 2.4 继承
 
 ## 2.5 继承后的内存布局与static_cast
 
-## 2.6 虚函数
+https://coolshell.cn/articles/12176.html
 
+## 2.6 虚函数
+当一个类是多态类时，其多态函数，必需声明为`virtual`才能被子类覆盖。
+
+```cpp
+struct Animale {
+    virtual void speech() = 0;
+    std::string name();
+}
+
+struct Gog : public Animale {
+    // override
+    void speech() override;
+
+    // invalid can't override name
+    // std::string name();
+}
+```
 ## 2.7 虚析构函数
 
+**多态类的析构函数必需为virtual**
+
 ## 2.8 纯虚函数
+
+纯虚函数表示一个函数没有实现，子类必需实现，类似Java的interface，形式如：
+
+```cpp
+struct Animale {
+    virtual void speech() = 0;
+}
+```
 
 ## 2.9 菱形继承与虚继承
 

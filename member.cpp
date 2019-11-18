@@ -84,3 +84,68 @@ TEST(Member, VariableInitDestructOrder) {
 
     X x;
 }
+
+TEST(Member, CompilerGeneratedFunction) {
+    struct X {
+        X() = default; // 1
+        ~X() = default; // 2
+
+        X(const X& copy) = default; // 3
+        X& operator=(const X& copy) = default; // 4
+
+        X(X&& move) = default; // 5
+        X& operator=(X&& move) = default; //6
+    };
+}
+
+
+TEST(Member, CompilerGeneratedFunctionTest) {
+    using namespace std;
+    struct X {
+        X() { cout << "X" << endl; }
+
+        ~X() { cout << "~X" << endl; }
+
+        X(const X& copy) { cout << "X&" << endl; }
+
+        X& operator=(const X& copy) {
+            cout << "X&=" << endl;
+            return *this;
+        }
+
+        X(X&& move) noexcept { cout << "X&&" << endl; }
+
+        X& operator=(X&& move) noexcept {
+            cout << "X&&=" << endl;
+            return *this;
+        }
+    };
+
+    cout << ">>x1" << endl;
+    X x1;
+
+    cout << ">>x2" << endl;
+    X x2(x1);
+
+    cout << ">>x3" << endl;
+    X x3 = x2;
+
+    cout << ">>x4" << endl;
+    X x4((X()));
+
+    cout << ">>x5" << endl;
+    X x5 = X();
+
+    cout << ">>x6" << endl;
+    X x6(std::move(x2));
+
+    cout << ">>x7" << endl;
+    X x7 = std::move(x3);
+
+    cout << ">>8" << endl;
+    x1 = x7; // 8
+
+    cout << ">>9" << endl;
+    x2 = std::move(x7); // 9
+
+}

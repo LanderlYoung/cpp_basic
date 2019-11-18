@@ -40,6 +40,7 @@ TEST(Member, VariableInitWithDefault) {
     EXPECT_EQ(x->a, 0);
     EXPECT_EQ(x->b, true);
     EXPECT_EQ(x->c, nullptr);
+
 }
 
 TEST(Member, VariableInitWithPartialInit) {

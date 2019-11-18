@@ -260,7 +260,10 @@ struct X {
 }
 ```
 
-吐槽：C++就是这样，标准看似很严谨，但是有些完全不是人类的思维能力可以熟练使用的，C++更像是给机器写的（说不定N年后AI就会写C++代码了)。。。
+吐槽：C++就是这样，标准看似很严谨，但是有些完全不是人类的思维能力可以熟练使用的，C++更像是给机器写的（说不定N年后AI就会写C++代码了)。。。好在我们可以利用一些技巧避免踩坑。
+
+![IDE_WARNING](https://i.loli.net/2019/11/18/MjVJwsulZUpG8qL.png)
+不要忽略IDE的warning。
 
 [default_constructor]: https://en.cppreference.com/w/cpp/language/default_constructor
 
@@ -277,7 +280,7 @@ struct X {
 };
 ```
 
-答案：构造， A，B；析构~B，~A。
+答案：构造 A，B；析构 B，A。
 
 原因：因为构造函数有多个，但是析构函数只能有一个因此成员的析构顺序必须固定，因此推导出了构造的顺序也必须固定。
 
@@ -365,6 +368,8 @@ X(X&& move) noexcept {
 1. 函数返回值
 2. 使用 `std::move` 强制转成右值
 
+move是C++11引入的一个重要特性，对性能有很大提升，并在在move的基础上实现了`std::uniqure_ptr`等重要类，建议读者认真了解。
+
 [move]:https://en.cppreference.com/w/cpp/language/move_constructor
 
 ## 2.4 继承
@@ -386,7 +391,7 @@ struct Gog : public Animale {
     // override
     void speech() override;
 
-    // invalid can't override name
+    // invalid can't override function
     // std::string name();
 }
 ```
@@ -406,21 +411,76 @@ struct Animale {
 
 ## 2.9 菱形继承与虚继承
 
+## 2.10 在C++中实现OOP的方式
+
+1. 用虚函数实现多态
+2. 用纯虚函数表示接口
+3. 尽量避免多继承
+4. 可以继承多个纯虚类（类似java实现多个接口）
+
 # 3 值，指针，引用
 
 从Java到C++的程序员通常会被值类型搞得晕头转向，因为Java中只有引用类型（其实对应于C++应该是指针），这使得事件变得简单明了。而C++中的值和引用是的复杂度发生了指数级的上升。
 
+这里我们讨论他们分别作为 函数临时变量、成员、函数参数、函数返回值 下的情况。
+
 ## 值
+就像int等内置基础类型一样，值类型在使用时是直接构造，拷贝类的。如：
+
+```cpp
+TEST(Value, Value) {
+    struct C {
+        X x;
+        X getX() { return x; }
+        X& getXRef() { return x; }
+        X* getXPtr() { return &x; }
+    };
+
+    C c; // 内部调用X默认构造函数
+
+    // X拷贝构造，作用域结束即析构
+    X x = c.getX();
+    // 无X构造
+    X& xr = c.getXRef();
+    // 无X构造
+    X* p = c.getXPtr();
+
+    // X拷贝构造, hello调用完成即析构
+    c.getX().hello();
+    // 无X构造
+    c.getXRef().hello();
+    // 无X构造
+    c.getXPtr()->hello();
+}
+```
+
+值类型使用起来是简单的，因此是比较简单的的，但是需要注意内存拷贝的问题。
+
+上述代码中C内部拥有X的值，因此x是c所独有的，又因为x是值类型，所以会在C析构的时候被默认析构掉。
+
+注意，当C内部持有X的时候，getX推荐返回`X&`，如上getXRef，这样可以避免上面`getX()`调用者创建X的拷贝，一方面是性能问题，另一方面调用者实际调用的并不是同一个x的实例，可能会引起问题。
+
+PS：一个比较完备的写法是：
+```cpp
+struct C {
+    X x;
+
+    X& getX() { return x; }
+
+    const X& getX() const { return x; }
+};
+```
+在C++中`getX()` 和 `getX() const`被视为两个函数，是重载关系。
 
 ## 指针
 
 ## 引用
 
-## 内存ownerness
-
-1. 值类型拥有内存所有权，因为他总是copy一份内存。
-2. 指针内存所有权不明确。
-3. 引用不具备内存所有权，他只能表示”借用“一块内存。
+| | 成员 | 函数参数 | 函数返回值 | 内存ownerness |
+| :-- | :-- | :-- | :-- | :-- |
+| 值 | | | | 拥有内存所有权，因为他总是copy一份内存。 |
+| 指针 | | | | 不明确(需要文档说明) |
+| 引用 | | | | 不具备内存所有权，他只能表示”借用“一块内存。 |
 
 中间说明引用：
 
@@ -431,6 +491,10 @@ void printA(A& a);
 ```
 
 上述getA返回`A&`意味着
+
+**声明成员时，用什么类型考虑顺序**：
+1. 值类型，class内部独有，getter返回引用
+2. 
 
 # prefer nullptr
 
@@ -527,3 +591,15 @@ TEST(Auto, Vector) {
 
 > Life is short, use auto!
 
+# prefer STL
+
+string, ttmalloc, ttfree
+
+ttList
+
+
+# prefer RAII
+jni local ref
+
+RenderContext
+v8::Scope

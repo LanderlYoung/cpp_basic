@@ -64,10 +64,13 @@ TEST(Value, Value) {
 TEST(Value, Pointer) {
     struct C {
         X* x;
+        bool own;
 
-        C() : x(new X()) {}
+        C() : x(new X()), own(true) {}
 
-        ~C() { delete x; }
+        explicit C(X* x) : x(x), own(false) {}
+
+        ~C() { if (own) delete x; }
 
         X* getXPtr() { return x; }
     };

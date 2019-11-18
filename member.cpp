@@ -39,10 +39,6 @@ TEST(Member, VariableInitWithDefault) {
     EXPECT_EQ(x->a, 0);
     EXPECT_EQ(x->b, true);
     EXPECT_EQ(x->c, nullptr);
-    // note：这个用例在clang上能通过，但是按照标准他应该和下面的等价
-    // 因此也不能通过。
-    // 结论，要么全部不初始化（交给编译器初始化默认值），要么全部初始化
-    // 永远不要初始化部分值
 }
 
 TEST(Member, VariableInitWithPartialInit) {

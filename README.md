@@ -528,7 +528,7 @@ bob->setAge(0);
 
 
 # prefer auto
-C++11中重新定义了几乎没人使用的auto关键字，使其具备自动类型推导的能力。（类似kotlin的var）。相应的还有一个`decltype`类型用来直接求出值得类型。
+C++11中重新定义了几乎没人使用的auto关键字，使其具备自动类型推导的能力。（类似kotlin的var）。相应的还有一个`decltype`用来直接求出值得类型。
 
 看一下auto怎么用。
 ```cpp

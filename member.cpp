@@ -86,6 +86,42 @@ TEST(Member, VariableInitDestructOrder) {
     X x;
 }
 
+TEST(Member, PrimitiveVariableInitWithConstructorSyntax) {
+    struct X {
+        int a;
+        bool b = true;
+        float c;
+        void* d;
+
+        X() : a(), b(), c(), d() {
+        }
+    };
+
+    char mem[sizeof(X)];
+    std::memset(mem, 0xFF, sizeof(X));
+
+    X* x = new(mem)X();
+    EXPECT_EQ(x->a, 0);
+    EXPECT_EQ(x->b, false);
+    EXPECT_EQ(x->c, 0.0f);
+    EXPECT_EQ(x->d, nullptr);
+
+    /*
+    0x104b140d0 <+0>:  pushq  %rbp
+    0x104b140d1 <+1>:  movq   %rsp, %rbp
+    0x104b140d4 <+4>:  movq   %rdi, -0x8(%rbp)
+    0x104b140d8 <+8>:  movq   -0x8(%rbp), %rdi
+->  0x104b140dc <+12>: movl   $0x0, (%rdi)
+    0x104b140e2 <+18>: movb   $0x0, 0x4(%rdi)
+    0x104b140e6 <+22>: xorps  %xmm0, %xmm0
+    0x104b140e9 <+25>: movss  %xmm0, 0x8(%rdi)
+    0x104b140ee <+30>: movq   $0x0, 0x10(%rdi)
+    0x104b140f6 <+38>: popq   %rbp
+    0x104b140f7 <+39>: retq
+    0x104b140f8 <+40>: nopl   (%rax,%rax)
+     */
+}
+
 TEST(Member, CompilerGeneratedFunction) {
     struct X {
         X() = default; // 1

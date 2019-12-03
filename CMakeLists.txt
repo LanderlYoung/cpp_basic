@@ -10,7 +10,9 @@ add_executable(
         cpp_basic
         new.cpp
         auto.cpp
-        member.cpp value_pointer_ref.cpp)
+        member.cpp
+        value_pointer_ref.cpp
+        template_enable_if.cpp init_list.cpp)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

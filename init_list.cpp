@@ -33,11 +33,17 @@ struct X {
 };
 
 void func(std::initializer_list<X> args) {
+    cout << args.begin() << endl;
+}
 
+template<typename... T>
+void func(T&& ... t) {
+    func({std::forward<T>(t)...});
 }
 
 TEST(InitializerList, Init) {
     func({X(), X(), X()});
+    func(X(), X(), X());
 }
 
 }

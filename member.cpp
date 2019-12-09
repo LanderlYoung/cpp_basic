@@ -60,7 +60,7 @@ TEST(Member, VariableInitWithPartialInit) {
     X* x = new(mem)X();
     EXPECT_EQ(x->a, 1);
     EXPECT_EQ(x->b, false);
-    EXPECT_EQ(x->c, nullptr);
+    EXPECT_NE(x->c, nullptr);
 }
 
 TEST(Member, VariableInitDestructOrder) {

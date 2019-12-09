@@ -97,3 +97,35 @@ TEST(New, ClassSpecificNewDelete) {
     // delete c;
 }
 
+TEST(New, ClassThrowInConstructor) {
+    class C {
+    public:
+        C() {
+            cout << "C::C()" << endl;
+            throw std::exception();
+        }
+        ~C() {
+            cout << "C::~C()" << endl;
+        }
+
+        void* operator new(size_t s) {
+            cout << "new " << s << endl;
+            return std::malloc(s);
+        };
+
+        void operator delete(void* ptr) {
+            cout << "delete " << ptr << endl;
+            std::free(ptr);
+        };
+    };
+
+    try {
+        new C();
+        FAIL();
+    } catch (std::exception&) {
+        SUCCEED();
+    }
+    // can't compile
+    // C* c = new C();
+    // delete c;
+}

@@ -55,3 +55,28 @@ TEST(Auto, Vector) {
     static_assert(std::is_same_v<decltype(it2), decltype(it3)>);
 
 }
+
+template<typename T>
+struct Test;
+
+
+TEST(Auto, UniversalRef) {
+    std::vector<bool> x;
+
+    // `std::vector<bool>::iterator:operator *()`
+    // returns a value, not a reference, can't bind to a reference.
+//    for (auto& b: x) {
+//    }
+
+
+//    for (auto&& b: x) {
+//        static_assert(std::is_same_v<decltype(b), bool&>);
+//        ::Test<decltype(b)> _;
+//    }
+
+//    for (auto& b: (std::vector<bool>{true, false})) {
+//    }
+
+    for (auto&& b: (std::vector<bool>{true, false})) {
+    }
+}

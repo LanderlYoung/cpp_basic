@@ -14,7 +14,8 @@ add_executable(
         value_pointer_ref.cpp
         template_enable_if.cpp
         init_list.cpp
-        virtual.cpp)
+        virtual.cpp
+        exception.cpp)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

@@ -15,7 +15,9 @@ add_executable(
         template_enable_if.cpp
         init_list.cpp
         virtual.cpp
-        exception.cpp rvalue.cpp)
+        exception.cpp
+        rvalue.cpp
+        thread_local.cpp)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

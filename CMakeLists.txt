@@ -17,7 +17,9 @@ add_executable(
         virtual.cpp
         exception.cpp
         rvalue.cpp
-        thread_local.cpp)
+        thread_local.cpp
+        v18.cpp
+)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

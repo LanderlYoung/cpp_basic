@@ -34,3 +34,24 @@ TEST(RVALUE, ProlongLifeTime) {
 
     // `const X&` and `X&&` prolong life-time of prvalue(temporary value).
 }
+
+namespace {
+
+template<typename T>
+bool perfectForward(T&& value) {
+    return std::is_rvalue_reference_v<decltype(value)>;
+}
+
+TEST(RVALUE, PERFECT_FORWARD) {
+    using X = std::vector<int>;
+
+    EXPECT_TRUE(perfectForward(X{}));
+
+    X x;
+    EXPECT_FALSE(perfectForward(x));
+
+    EXPECT_TRUE(perfectForward(std::move(x)));
+
+}
+
+}

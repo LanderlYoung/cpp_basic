@@ -111,8 +111,157 @@ TEST(TEMPLATE, COMPOSE_FMAP) {
 
 }
 
+namespace {
+
+template<typename F>
+void for_each(F) {
+}
+
+template<typename F, typename T, typename... TT>
+void for_each(F f, T&& item, TT&& ... items) {
+    f(std::forward<decltype(item)>(item));
+    for_each(f, std::forward<decltype(items)>(items)...);
+}
+
+
+TEST(TEMPLATE, VARIADIC_FOR_EACH) {
+    std::vector<int> v;
+    for_each([&v](int x) {
+        v.push_back(x);
+    }, 1, 2, 3);
+
+    EXPECT_EQ(v, (std::vector<int>{1, 2, 3}));
+}
+
+}
+
 
 namespace {
 
+template<class T, T... Ints>
+struct integer_sequence {
+};
+
+template<size_t... Ints>
+using index_sequence =  integer_sequence<size_t, Ints...>;
+
+template<size_t N, size_t... Ints>
+struct index_sequence_helper {
+    typedef typename index_sequence_helper<N - 1, N - 1, Ints...>::type type;
+};
+
+template<size_t... Ints>
+struct index_sequence_helper<0, Ints...> {
+    typedef integer_sequence<size_t, Ints...> type;
+};
+
+template<size_t N>
+using make_index_sequence = typename index_sequence_helper<N>::type;
+
+
+namespace my {
+
+template<typename T, T... seq>
+struct integer_sequence {
+};
+
+template<size_t... seq>
+using index_sequence = integer_sequence<size_t, seq...>;
+
+template<size_t N, size_t... seq>
+struct __make_index_sequence_helper {
+    using type = typename __make_index_sequence_helper<N - 1, N - 1, seq...>::type;
+};
+
+// partial specialize
+template<size_t... seq>
+struct __make_index_sequence_helper<0, seq...> {
+    using type = index_sequence<seq...>;
+};
+
+template<size_t N>
+using make_index_sequence = typename __make_index_sequence_helper<N>::type;
+
+}
+
+template<typename T>
+struct Debug;
+
+make_index_sequence<10> x{};
+index_sequence_helper<10>::type;
+//Debug<my::make_index_sequence<10>> y;
+
+template<size_t... idx>
+std::vector<size_t> getIndex(index_sequence<idx...> sequence) {
+    std::vector<size_t> v;
+    for_each([&v](size_t x) {
+        v.push_back(x);
+    }, idx...);
+    return v;
+}
+
+template<size_t... idx>
+std::vector<size_t> myGetIndex(my::index_sequence<idx...> sequence) {
+    std::vector<size_t> v;
+    for_each([&v](size_t x) {
+        v.push_back(x);
+    }, idx...);
+    return v;
+}
+
+TEST(TEMPLATE, SEQUENCE) {
+    EXPECT_EQ(
+            getIndex(make_index_sequence<5>{}),
+            (std::vector<size_t>{0, 1, 2, 3, 4})
+    );
+
+    EXPECT_EQ(
+            myGetIndex(my::make_index_sequence<5>{}),
+            (std::vector<size_t>{0, 1, 2, 3, 4})
+    );
+}
+
+namespace {
+
+// inverse variadic params
+
+template<size_t N, typename F, typename Arg, typename... Args>
+struct __reverse_variadic_helper {
+    static auto call(F&& f, Arg&& arg, Args&& ... args) {
+        return __reverse_variadic_helper<N - 1, F, decltype(args)..., decltype(arg)>::call(
+                std::forward<F>(f), std::forward<Args>(args)..., std::forward<Arg>(arg));
+    }
+};
+
+template<typename F, typename Arg, typename... Args>
+struct __reverse_variadic_helper<0, F, Arg, Args...> {
+    static auto call(F&& f, Arg&& arg, Args&& ... args) {
+        return f(std::forward<Args>(args)..., std::forward<Arg>(arg));
+    }
+};
+
+/**
+ * reverse_variadic(f,1,2,3) => f(3,2,1)
+ */
+template<typename F, typename... Args>
+auto reverse_variadic(F&& f, Args&& ... args) {
+    return __reverse_variadic_helper<sizeof...(args) - 1, F, decltype(args)...>::call(
+            std::forward<F>(f), std::forward<Args>(args)...);
+}
+
+
+}
+
+// TODO: not done
+TEST(TEMPLATE, REVERSE_VARIADIC) {
+    std::vector<int> v;
+    reverse_variadic([&](auto&& ...x) {
+        for_each([&](auto&& item) {
+            v.push_back(item);
+        }, x...);
+    }, 1, 2, 3);
+
+    EXPECT_EQ(v, (std::vector<int>{3,2,1}));
+}
 
 }

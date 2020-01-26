@@ -19,7 +19,8 @@ add_executable(
         rvalue.cpp
         thread_local.cpp
         v18.cpp
-)
+        v22.cpp
+        trait.cpp)
 
 target_link_libraries(cpp_basic gtest gtest_main)
 

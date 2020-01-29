@@ -20,9 +20,13 @@ add_executable(
         thread_local.cpp
         v18.cpp
         v22.cpp
-        trait.cpp)
+        trait.cpp
+        boost.cpp)
 
-target_link_libraries(cpp_basic gtest gtest_main)
+FIND_PACKAGE(Boost 1.40)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+
+target_link_libraries(cpp_basic gtest gtest_main ${Boost_LIBRARIES})
 
 add_test(
         NAME CppBasic
